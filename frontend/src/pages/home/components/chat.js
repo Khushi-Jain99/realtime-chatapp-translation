@@ -252,6 +252,17 @@ function ChatArea({ socket }) {
         msgContainer.scrollTop = msgContainer.scrollHeight;
     }, [allMessages, isTyping]);
 
+    const speakText = (text) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; // You can change to 'hi-IN' for Hindi
+            utterance.rate = 1;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert('Your browser does not support text-to-speech.');
+        }
+    };
+
     return <>
         {selectedChat && <div className="app-chat-area">
             <div className="app-chat-area-header">{formatName(selectedUser)}</div>
@@ -259,29 +270,56 @@ function ChatArea({ socket }) {
             <div className="main-chat-area" id="main-chat-area">
                 {allMessages.map(msg => {
                     const isSender = msg.sender === user._id;
-                    return <div className={`message-container ${isSender ? 'sent' : 'received'}`} key={msg._id}>
-                        <div>
-                            <div className={isSender ? "send-message" : "received-message"}>
-                                {msg.translated && <div><strong>{msg.translated}</strong></div>}
-                                <div>{msg.text}</div>
-                                <div>{msg.image && (
-                                    <img
-                                        src={msg.image}
-                                        alt="chat"
-                                        style={{ maxWidth: "200px", borderRadius: "10px" }}
-                                    />
-                                )}
+                    return (
+                        <div className={`message-container ${isSender ? 'sent' : 'received'}`} key={msg._id}>
+                            <div>
+                                <div className={isSender ? "send-message" : "received-message"}>
+                                    {msg.translated && (
+                                        <div><strong>{msg.translated}</strong></div>
+                                    )}
+                                    <div>
+                                        <span>{msg.text}</span>
+                                    </div>
+                                    {msg.image && (
+                                        <div>
+                                            <img
+                                                src={msg.image}
+                                                alt="chat"
+                                                style={{ maxWidth: "200px", borderRadius: "10px" }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                <div
+                                    className="message-timestamp-with-tts"
+                                    style={isSender ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }}
+                                >
+                                    <span className="message-timestamp">
+                                        {formatTime(msg.createdAt)}
+                                        {isSender && msg.read && (
+                                            <i className="fa fa-check-circle" style={{ color: '#007bff', marginLeft: '6px' }}></i>
+                                        )}
+                                    </span>
+                                    {!isSender && msg.text && (
+                                        <button
+                                            className="tts-button"
+                                            onClick={() => speakText(msg.text)}
+                                            title="Listen to message"
+                                        >
+                                            <i className="fa fa-volume-up"></i>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                            <div className="message-timestamp" style={isSender ? { textAlign: 'right' } : { textAlign: 'left' }}>
-                                {formatTime(msg.createdAt)}
-                                {isSender && msg.read && <i className="fa fa-check-circle" style={{ color: '#007bff' }}></i>}
-                            </div>
                         </div>
-                    </div>
+                    );
                 })}
+                
+                {/* Typing indicator */}
                 <div className="typing-indicator">
-                    {isTyping && selectedChat?.members.map(m => m._id).includes(data?.sender) && <i>Typing....</i>}
+                    {isTyping && selectedChat?.members.map(m => m._id).includes(data?.sender) && (
+                        <i>Typing....</i>
+                    )}
                 </div>
             </div>
 
