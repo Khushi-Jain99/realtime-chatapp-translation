@@ -1,5 +1,5 @@
 import { useDispatch ,useSelector } from "react-redux";
-import { createNewMessage, getAllMessages } from "../../../apiCalls/message";
+import { createNewMessage, getAllMessages, summarizeText } from "../../../apiCalls/message";
 import { hideLoader, showLoader } from "../../../redux/loaderSlice";
 import toast from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
@@ -24,6 +24,9 @@ function ChatArea({ socket }) {
     const [data, setData] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const recognitionRef = useRef(null);
+    const [summary, setSummary] = useState("");
+    const [isSummarizing, setIsSummarizing] = useState(false);
+
 
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -255,7 +258,7 @@ function ChatArea({ socket }) {
     const speakText = (text) => {
         if ('speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US'; // You can change to 'hi-IN' for Hindi
+            utterance.lang = 'en-US';
             utterance.rate = 1;
             window.speechSynthesis.speak(utterance);
         } else {
@@ -263,9 +266,35 @@ function ChatArea({ socket }) {
         }
     };
 
+    // Chat Summarization
+    const handleSummarize = async () => {
+        try {
+            setIsSummarizing(true);
+            const summaryText = await summarizeText(selectedChat._id);
+            setSummary(summaryText);
+            setIsSummarizing(false);
+        } catch (error) {
+            setIsSummarizing(false);
+            toast.error("Something went wrong.");
+            console.error(error.message);
+        }
+    };
+
     return <>
         {selectedChat && <div className="app-chat-area">
             <div className="app-chat-area-header">{formatName(selectedUser)}</div>
+            {/* Chat Summarization */}
+            <div style={{ padding: "10px" }}>
+                <button onClick={handleSummarize}>
+                    {isSummarizing ? "Summarizing..." : "Summarize Chat"}
+                </button>
+                {summary && (
+                    <div>
+                        <strong>Chat Summary:</strong>
+                        <p>{summary}</p>
+                    </div>
+                )}
+            </div>
 
             <div className="main-chat-area" id="main-chat-area">
                 {allMessages.map(msg => {
