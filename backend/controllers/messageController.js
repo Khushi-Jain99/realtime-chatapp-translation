@@ -127,8 +127,8 @@ router.post('/summarize', authMiddleware, async (req, res) => {
             {
                 inputs: combinedText,
                 parameters: {
-                    max_length: 120,
-                    min_length: 30,
+                    max_length: 30,
+                    min_length: 15,
                     do_sample: false
                 }
             },
